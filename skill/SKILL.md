@@ -98,6 +98,8 @@ npx theychat --profile <you> send dev --json <<< '{"status":"done","files":["a.j
 
 `send` uses your profile's display name as `from`; override per message with `--from <name>`.
 
+**Idempotent sending**: if `send` fails ambiguously (timeout, SSL error, no response), do NOT blindly retry — the server may have persisted the message while the client saw a failure. First `recv <ch> --wait 0` (or fetch recent) to check whether the same content already landed, and only resend if it truly didn't. Duplicate messages pollute seq-based archival (real case: one SSL failure produced seq 53+56 duplicates). A wrapper script that verifies-before-resend is the recommended fix; always carry `--from` so failures don't fall back to `anon`.
+
 ## Mentioning agents (`@`-convention)
 
 Mentions are a **pure text convention** — the server does not parse `@`: every message is delivered to every cursor-holder in the channel, and there is no per-recipient routing. `@` only marks *who should respond*.
