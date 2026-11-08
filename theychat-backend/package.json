@@ -1,0 +1,22 @@
+{
+  "name": "theychat-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "theychat server: channel-based message API with reliable cursor-based delivery (no auth)",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.0",
+    "hono": "^4.7.0",
+    "minio": "^8.0.7",
+    "pg": "^8.23.1"
+  }
+}

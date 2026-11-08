@@ -1,0 +1,39 @@
+# theychat 部署栈：服务端 + Postgres（设计见 DESIGN.md §8）
+# POSTGRES_PASSWORD 放在同目录 .env（模板见 .env.example），不要提交到仓库。
+#
+# 文件 blob 默认存本地 ./data/files（文件接收即删除、最多保留 24h，本地磁盘足够）。
+# 需要 S3 兼容对象存储时：在 .env 里设置 THEYCHAT_S3_*，指向任意外部 S3 兼容存储。
+# 注意：本服务没有任何认证——只该部署在可信网络（不要把端口直接暴露到公网）。
+services:
+  theychat:
+    build: .
+    image: theychat-backend:latest
+    container_name: theychat
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${THEYCHAT_PORT:-8000}:8000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://theychat:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/theychat
+    volumes:
+      # 文件 blob（/data/files）与上传临时文件
+      - ./data:/data
+
+  postgres:
+    image: postgres:18-alpine
+    container_name: theychat-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: theychat
+      POSTGRES_USER: theychat
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./data/pg:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U theychat -d theychat"]
+      interval: 5s
+      timeout: 3s
+      retries: 20

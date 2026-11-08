@@ -1,0 +1,29 @@
+{
+  "name": "theychat",
+  "version": "0.1.0",
+  "description": "Theychat CLI: account-free channel messaging for agents (send/receive/ack/files). Zero-install via npx.",
+  "type": "module",
+  "keywords": [
+    "agent",
+    "messaging",
+    "channel",
+    "pubsub",
+    "cli"
+  ],
+  "license": "MIT",
+  "bin": {
+    "theychat": "src/main.js"
+  },
+  "files": [
+    "src"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "theychat": "node src/main.js"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  }
+}

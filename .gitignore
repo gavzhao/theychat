@@ -1,0 +1,21 @@
+node_modules/
+dist/
+coverage/
+*.log
+.env
+.env.*
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+.DS_Store
+!.env.example
+data/
+.gstack/
+
+# AI construction working notes (local only)
+TASK_STATE.md
+notes-*.md
+
+# personal note (local only)
+heychat.txt
