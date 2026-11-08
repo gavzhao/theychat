@@ -378,6 +378,17 @@ export async function createStore(databaseUrl) {
     return row.cursor;
   }
 
+  /** 成员列表（§3：成员 = 在该频道持游标的 client_id）：只读快照，最近活跃在前 */
+  async function listMembers(channel) {
+    const { rows } = await q(`
+      SELECT client_id, cursor, updated_at
+      FROM cursors
+      WHERE channel = $1
+      ORDER BY updated_at DESC
+    `, [channel]);
+    return rows;
+  }
+
   return {
     pool,
     tx,
@@ -402,5 +413,6 @@ export async function createStore(databaseUrl) {
     getCursorRow,
     ensureCursor,
     setCursor,
+    listMembers,
   };
 }

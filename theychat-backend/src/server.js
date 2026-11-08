@@ -208,6 +208,13 @@ cid.get('/channels/:ch/cursor', async (c) => {
   });
 });
 
+// GET /v1/channels/:ch/members —— 频道成员列表（§3：成员 = 持游标者）：公开只读信息，无需 X-Client-Id
+v1.get('/channels/:ch/members', async (c) => {
+  const ch = await requireChannel(c);
+  const members = await store.listMembers(ch);
+  return c.json({ channel: ch, count: members.length, members });
+});
+
 // POST /v1/channels/:ch/files —— 上传文件（§12）：body 为原始字节流，落盘后作为一条文件消息进入频道日志
 cid.post('/channels/:ch/files', async (c) => {
   const ch = await requireChannel(c);

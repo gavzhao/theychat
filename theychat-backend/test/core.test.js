@@ -175,3 +175,29 @@ test('file exchange', async () => {
   await srv.call('POST', '/v1/channels', { json: { name: 'other' } });
   assert.equal((await srv.call('GET', `/v1/channels/other/files/${up.body.file.file_id}`)).status, 404);
 });
+
+test('channel members: cursor holders only, most recently active first, no X-Client-Id needed', async () => {
+  // 频道不存在 → 404 channel_not_found（沿用 requireChannel）
+  const nf = await srv.call('GET', '/v1/channels/no-such-ch/members');
+  assert.equal(nf.status, 404, nf.text);
+  assert.equal(nf.body.error.code, 'channel_not_found');
+
+  // 两个 client_id 各 recv 一次（首拉初始化游标，§5）→ 各成为频道成员；间隔保证 updated_at 有先后
+  await srv.call('POST', '/v1/channels', { json: { name: 'members' } });
+  await srv.call('GET', '/v1/channels/members/messages', { clientId: CID_A });
+  await new Promise((r) => setTimeout(r, 30));
+  await srv.call('GET', '/v1/channels/members/messages', { clientId: CID_B });
+
+  // 无头即可读（成员列表是频道公开信息）
+  const r = await srv.call('GET', '/v1/channels/members/members');
+  assert.equal(r.status, 200, r.text);
+  assert.equal(r.body.channel, 'members');
+  assert.equal(r.body.count, 2);
+  assert.deepEqual(r.body.members.map((m) => m.client_id), [CID_B, CID_A]); // 最近活跃在前
+  for (const m of r.body.members) {
+    assert.equal(typeof m.client_id, 'string');
+    assert.equal(typeof m.cursor, 'number');
+    assert.equal(typeof m.updated_at, 'number');
+  }
+  assert.ok(r.body.members[0].updated_at >= r.body.members[1].updated_at);
+});

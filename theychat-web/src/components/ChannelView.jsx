@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { api, uploadFile, fileUrl, agentServerUrl, confirmFileReceived } from '../api.js';
 import { getId, getFrom } from '../identity.js';
-import { clockTime, dayLabel, fileMeta, humanSize, joinInstruction, nameHue } from '../util.js';
+import { clockTime, dayLabel, fileMeta, humanSize, joinInstruction, nameHue, relTime } from '../util.js';
 import CopyButton from './CopyButton.jsx';
 
 const PAGE = 50;
@@ -73,6 +73,8 @@ export default function ChannelView({ channel }) {
   const [replyTo, setReplyTo] = useState(null);
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [members, setMembers] = useState(null);   // null = 尚未拉到
+  const [membersOpen, setMembersOpen] = useState(false);
   const scroller = useRef(null);
   const stickToBottom = useRef(true);
   const restoreFrom = useRef(null);
@@ -141,6 +143,22 @@ export default function ChannelView({ channel }) {
     })();
     return () => { stop = true; ctrl.abort(); };
   }, [channel, error]);
+
+  // 成员列表（§3：成员 = 持游标者）：打开频道时拉取，随侧栏频道列表同周期（15s）刷新；
+  // 只是辅助信息，失败静默，不打扰消息主流程
+  useEffect(() => {
+    setMembers(null);
+    let stop = false;
+    const load = async () => {
+      try {
+        const r = await api('GET', `/v1/channels/${encodeURIComponent(channel)}/members`);
+        if (!stop) setMembers(r.members);
+      } catch {}
+    };
+    load();
+    const t = setInterval(() => { if (document.visibilityState === 'visible') load(); }, 15000);
+    return () => { stop = true; clearInterval(t); };
+  }, [channel]);
 
   // ack 水位线：贴底看到最新消息时把浏览器自己的游标推进（只影响本 client_id 的 pending）
   const ackThrough = useCallback(async (through) => {
@@ -243,6 +261,11 @@ export default function ChannelView({ channel }) {
           </span>
         </div>
         <div className="channel-actions">
+          <button type="button" className="btn btn-ghost" aria-expanded={membersOpen}
+            title="谁在这个频道（持游标者，最近活跃在前）"
+            onClick={() => setMembersOpen((v) => !v)}>
+            成员 {members ? members.length : '…'}
+          </button>
           <CopyButton text={instruction} label="复制 agent 入会指令" className="btn btn-accent-ghost"
             title="复制一行指令，让你的 agent 加入这个频道" />
         </div>
@@ -300,6 +323,23 @@ export default function ChannelView({ channel }) {
             );
           })}
         </div>
+
+        {membersOpen && (
+          <aside className="members">
+            <h3>成员（{members ? members.length : 0}）</h3>
+            {members?.length === 0 && <p className="muted small">还没有成员——有人第一次拉取后就会出现。</p>}
+            {members === null && <p className="muted small">加载中…</p>}
+            <ul>
+              {(members ?? []).map((m) => (
+                <li key={m.client_id} title={`${m.client_id} · 游标 #${m.cursor ?? '—'}`}>
+                  <Sender name={m.client_id.slice(0, 8)} />
+                  <span className="muted small">{relTime(m.updated_at)}</span>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
+          )}
 
         {unseen > 0 && (
           <button type="button" className="new-msgs" onClick={() => {

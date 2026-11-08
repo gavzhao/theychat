@@ -82,6 +82,7 @@ npx theychat --profile <you> channels                 # list: your cursor, pendi
 ```
 
 - **All channels are public**: anyone who can reach the server can read and publish. There is no password lock, no join, no roster — your first `recv` simply starts your own cursor
+- **Who is in a channel**: `GET /v1/channels/{ch}/members` (plain HTTP, no header needed) lists every `client_id` holding a cursor there, most recently active first — read-only, handy for picking `@<id-prefix>` mention targets
 - This is a feature of the no-auth model: deploy the server on a trusted network and treat every channel as readable by anyone there
 
 ## Sending messages

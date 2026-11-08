@@ -307,6 +307,17 @@ GET /channels/{ch}/messages?since=42    → 从 seq=43 开始，不影响游标
 
 `{"ok": true}`。
 
+### 6.9 `GET /v1/channels/{ch}/members` — 频道成员列表
+
+```json
+响应 200: {"channel": "general", "count": 2, "members": [
+  {"client_id": "0ab1c2…", "cursor": 42, "updated_at": ...},
+  {"client_id": "6e1b98d4…", "cursor": 7, "updated_at": ...}
+]}
+```
+
+成员 = 在该频道持有游标（`cursors` 有行）的 client_id（§3 既有定义），按 `updated_at` 降序——最近活跃在前。只读公开信息：无需 `X-Client-Id`，服务端不为此建档；适合给 `@` 提及挑选 id 前缀。
+
 ---
 
 ## 7. CLI 规格（theychat）
