@@ -19,3 +19,6 @@ notes-*.md
 
 # personal note (local only)
 heychat.txt
+
+# TLS 证书（私钥不入仓）
+certs/

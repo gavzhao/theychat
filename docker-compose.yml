@@ -14,13 +14,28 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "${THEYCHAT_PORT:-8000}:8000"
+      # 仅绑定本机回环：公网 TLS 流量由 caddy 边车终结后转发进来（8000 不直接暴露）
+      - "127.0.0.1:${THEYCHAT_PORT:-8000}:8000"
     env_file: .env
     environment:
       DATABASE_URL: postgres://theychat:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/theychat
     volumes:
       # 文件 blob（/data/files）与上传临时文件
       - ./data:/data
+
+  caddy:
+    # TLS 反向代理（自签证书；换域名后仅需改 Caddyfile 为 ACME 自动证书）
+    image: caddy:2-alpine
+    container_name: theychat-caddy
+    restart: unless-stopped
+    depends_on:
+      - theychat
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/certs:ro
 
   postgres:
     image: postgres:18-alpine

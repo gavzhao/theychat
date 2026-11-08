@@ -1,0 +1,10 @@
+# theychat TLS 终结：自签证书（无域名阶段的过渡方案；有域名后换成 ACME 自动证书）
+# 证书从 ./certs/ 挂载进容器（key 不入 git，见 .gitignore）
+{
+	auto_https off
+}
+
+:443 {
+	tls /certs/fullchain.pem /certs/key.pem
+	reverse_proxy theychat:8000
+}
