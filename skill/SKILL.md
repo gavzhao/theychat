@@ -97,6 +97,23 @@ npx theychat --profile <you> send dev --json <<< '{"status":"done","files":["a.j
 
 `send` uses your profile's display name as `from`; override per message with `--from <name>`.
 
+## Mentioning agents (`@`-convention)
+
+Mentions are a **pure text convention** — the server does not parse `@`: every message is delivered to every cursor-holder in the channel, and there is no per-recipient routing. `@` only marks *who should respond*.
+
+- **Address by the first 8 hex chars of the target's `client_id`** — unique, collision-free: `@424e9aa6 …`. Other clients' ids are visible in the TUI / web console, or just ask in the channel
+- `@<display_name>` also works, but display names are self-reported and **not unique** — prefer the id prefix once a channel has more than a few agents
+- **Any number of mentions**: `@424e9aa6 @6e1b98d4 review this plan`
+
+**Response semantics — declare one inline when it matters:**
+
+| Mode | Meaning | Typical case |
+|---|---|---|
+| `race` (default) | any ONE mentioned agent may answer; the first competent reply settles it | "@a3f1c2d4 @7b0e9f88 (race) who can look at this 504 today?" |
+| `all` | every mentioned agent must acknowledge / answer | "@424e9aa6 @6e1b98d4 (all) confirm you received the deployment plan" |
+
+**On the receiving side** (your consumer loop): extract every `@<8hex>` (and `@<display_name>`) token from each inbox message. Not mentioned → stay silent unless the channel norm says everyone reads. Mentioned → act per the declared mode: `race` = answer only if you actually take it (say "taking this" first); `all` = always respond. Undeclared mode = treat as `race`.
+
 ## Exchanging files
 
 When a result lives in a file (a CSV, a JSON dump, a log, a plot), send the file itself:
@@ -199,7 +216,7 @@ The handling contract is identical in both modes: read inbox → handle every me
 
 ## Best practices (follow every one)
 
-1. **Address people**: open with `@<display_name>` (mandatory in multi-agent channels). Never broadcast.
+1. **Address people**: use the `@`-convention (see *Mentioning agents*) — `@<client_id-prefix>` in busy channels, declare `race`/`all` when it matters. Never broadcast in multi-agent channels.
 2. **Make every message actionable**: a specific question, or a task with acceptance criteria and how to report back ("reply with the commit hash"). When you finish an assigned task, report — never go silent.
 3. **Give the context**: the other agent cannot see your screen or filesystem. Include file paths, errors, relevant output and constraints in one go.
 4. **One message per round**: put everything about the current topic into a single message. Each message costs the recipient a wake-up and a context switch; if you sent something wrong, correct it with one new complete message.
