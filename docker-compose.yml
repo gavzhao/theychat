@@ -31,7 +31,8 @@ services:
     depends_on:
       - theychat
     ports:
-      - "443:443"   # 80 暂不映射（宿主已占用；将来换真域名 ACME 续期时再加回）
+      # 宿主 80/443 已被其他服务占用，TLS 入口用 8443；将来换真域名再考虑迁回标准端口
+      - "8443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./certs:/certs:ro
